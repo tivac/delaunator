@@ -1,6 +1,6 @@
 
 const EPSILON = Math.pow(2, -52);
-const EDGE_STACK = new Uint32Array(512);
+const EDGE_STACK = new Array(512);
 
 import {orient2d} from 'robust-predicates';
 
@@ -8,7 +8,7 @@ export default class Delaunator {
 
     static from(points, getX = defaultGetX, getY = defaultGetY) {
         const n = points.length;
-        const coords = new Float64Array(n * 2);
+        const coords = new Array(n * 2);
 
         for (let i = 0; i < n; i++) {
             const p = points[i];
@@ -27,19 +27,19 @@ export default class Delaunator {
 
         // arrays that will store the triangulation graph
         const maxTriangles = Math.max(2 * n - 5, 0);
-        this._triangles = new Uint32Array(maxTriangles * 3);
-        this._halfedges = new Int32Array(maxTriangles * 3);
+        this._triangles = new Array(maxTriangles * 3);
+        this._halfedges = new Array(maxTriangles * 3);
 
         // temporary arrays for tracking the edges of the advancing convex hull
         this._hashSize = Math.ceil(Math.sqrt(n));
-        this._hullPrev = new Uint32Array(n); // edge to prev edge
-        this._hullNext = new Uint32Array(n); // edge to next edge
-        this._hullTri = new Uint32Array(n); // edge to adjacent triangle
-        this._hullHash = new Int32Array(this._hashSize).fill(-1); // angular edge hash
+        this._hullPrev = new Array(n); // edge to prev edge
+        this._hullNext = new Array(n); // edge to next edge
+        this._hullTri = new Array(n); // edge to adjacent triangle
+        this._hullHash = new Array(this._hashSize).fill(-1); // angular edge hash
 
         // temporary arrays for sorting points
-        this._ids = new Uint32Array(n);
-        this._dists = new Float64Array(n);
+        this._ids = new Array(n);
+        this._dists = new Array(n);
 
         this.update();
     }
@@ -115,7 +115,7 @@ export default class Delaunator {
                 this._dists[i] = (coords[2 * i] - coords[0]) || (coords[2 * i + 1] - coords[1]);
             }
             quicksort(this._ids, this._dists, 0, n - 1);
-            const hull = new Uint32Array(n);
+            const hull = new Array(n);
             let j = 0;
             for (let i = 0, d0 = -Infinity; i < n; i++) {
                 const id = this._ids[i];
@@ -124,9 +124,9 @@ export default class Delaunator {
                     d0 = this._dists[id];
                 }
             }
-            this.hull = hull.subarray(0, j);
-            this.triangles = new Uint32Array(0);
-            this.halfedges = new Uint32Array(0);
+            this.hull = hull.slice(0, j);
+            this.triangles = new Array(0);
+            this.halfedges = new Array(0);
             return;
         }
 
@@ -245,15 +245,15 @@ export default class Delaunator {
             hullHash[this._hashKey(coords[2 * e], coords[2 * e + 1])] = e;
         }
 
-        this.hull = new Uint32Array(hullSize);
+        this.hull = new Array(hullSize);
         for (let i = 0, e = this._hullStart; i < hullSize; i++) {
             this.hull[i] = e;
             e = hullNext[e];
         }
 
         // trim typed triangle mesh arrays
-        this.triangles = this._triangles.subarray(0, this.trianglesLen);
-        this.halfedges = this._halfedges.subarray(0, this.trianglesLen);
+        this.triangles = this._triangles.slice(0, this.trianglesLen);
+        this.halfedges = this._halfedges.slice(0, this.trianglesLen);
     }
 
     _hashKey(x, y) {
